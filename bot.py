@@ -430,6 +430,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         res = r.json()
 
+        print("========== API RESPONSE ==========")
+        print(res)
+        print("==================================")
+
         # =====================================================
         # УСПІХ
         # =====================================================
@@ -458,8 +462,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         else:
 
+            error_msg = (
+                res.get("message")
+                or res.get("result")
+                or "Невідома помилка API"
+            )
+
             await msg.edit_text(
-                f"❌ <b>Помилка:</b>\n{res.get('message')}",
+                f"❌ <b>Помилка:</b>\n<code>{error_msg}</code>",
                 parse_mode="HTML"
             )
 
