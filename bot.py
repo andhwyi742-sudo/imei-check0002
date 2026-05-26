@@ -14,7 +14,13 @@ from telegram.ext import (
 # =====================================================
 
 TOKEN = "8588926481:AAE4tVcAryIfKuHhwR347IHf32rE3R9b4Tk"
+
+# 👑 ГОЛОВНИЙ АДМІН
 YOUR_ID = 2061131189
+
+# 👮 СПИСОК АДМІНІВ
+ADMINS = [YOUR_ID]
+
 API_KEY = "8EkY2-6WohA-AzFpu-PcsIc-01bh1-6ozIE"
 
 API_BASE_URL = "https://alpha.imeicheck.com/api/php-api"
@@ -22,13 +28,70 @@ API_BASE_URL = "https://alpha.imeicheck.com/api/php-api"
 SERVICE_ID = "4"
 
 # =====================================================
-# 📌 КНОПКА
+# 📌 КНОПКИ
 # =====================================================
 
 keyboard = ReplyKeyboardMarkup(
-    [["💰 Баланс"]],
+    [
+        ["💰 Баланс"],
+        ["👮 Додати адміна"]
+    ],
     resize_keyboard=True
 )
+
+# =====================================================
+# 👮 ДОДАТИ АДМІНА
+# =====================================================
+
+async def add_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    user_id = update.effective_user.id
+
+    # тільки головний адмін
+    if user_id != YOUR_ID:
+
+        await update.message.reply_text(
+            "нет доступа"
+        )
+
+        return
+
+    # перевірка аргументу
+    if not context.args:
+
+        await update.message.reply_text(
+            "❗ Використання:\n/addadmin ID"
+        )
+
+        return
+
+    try:
+
+        new_admin = int(context.args[0])
+
+    except:
+
+        await update.message.reply_text(
+            "❌ Невірний ID"
+        )
+
+        return
+
+    # якщо вже адмін
+    if new_admin in ADMINS:
+
+        await update.message.reply_text(
+            "⚠️ Цей користувач вже адмін"
+        )
+
+        return
+
+    ADMINS.append(new_admin)
+
+    await update.message.reply_text(
+        f"✅ Адмін доданий:\n<code>{new_admin}</code>",
+        parse_mode="HTML"
+    )
 
 # =====================================================
 # 📱 КРАСИВИЙ ПАРСЕР
@@ -67,7 +130,6 @@ def clean_result(raw: str):
 
     model = "Невідомо"
 
-    # 1. Пошук моделі у відповіді API
     model_patterns = [
         r"(iPhone[^\n]+)",
         r"Model:\s*(.+)",
@@ -81,22 +143,18 @@ def clean_result(raw: str):
         if m:
             model = m.group(1).strip()
 
-            # прибираємо IMEI якщо злипся
             model = re.sub(r"IMEI.*", "", model).strip()
 
             break
 
-    # 2. Якщо API не повернуло модель — визначаємо по TAC
+    # TAC визначення
     if model == "Невідомо" and imei != "—":
 
         tac = imei[:8]
 
         tac_models = {
 
-            # =================================================
             # iPhone 11
-            # =================================================
-
             "35391510": "iPhone 11",
             "35656510": "iPhone 11",
             "35291311": "iPhone 11",
@@ -107,10 +165,7 @@ def clean_result(raw: str):
             "35392010": "iPhone 11 Pro Max",
             "35392110": "iPhone 11 Pro Max",
 
-            # =================================================
             # iPhone 12
-            # =================================================
-
             "35305110": "iPhone 12",
             "35275510": "iPhone 12",
 
@@ -123,10 +178,7 @@ def clean_result(raw: str):
             "35671911": "iPhone 12 Pro Max",
             "35672011": "iPhone 12 Pro Max",
 
-            # =================================================
             # iPhone 13
-            # =================================================
-
             "35210527": "iPhone 13 mini",
             "35210627": "iPhone 13 mini",
 
@@ -139,10 +191,7 @@ def clean_result(raw: str):
             "35655150": "iPhone 13 Pro Max",
             "35655250": "iPhone 13 Pro Max",
 
-            # =================================================
             # iPhone 14
-            # =================================================
-
             "35391505": "iPhone 14",
             "35391605": "iPhone 14",
 
@@ -155,10 +204,7 @@ def clean_result(raw: str):
             "35342568": "iPhone 14 Pro Max",
             "35342668": "iPhone 14 Pro Max",
 
-            # =================================================
             # iPhone 15
-            # =================================================
-
             "35113493": "iPhone 15",
             "35113593": "iPhone 15",
 
@@ -171,10 +217,7 @@ def clean_result(raw: str):
             "35837595": "iPhone 15 Pro Max",
             "35837695": "iPhone 15 Pro Max",
 
-            # =================================================
             # iPhone 16
-            # =================================================
-
             "35574150": "iPhone 16",
             "35574250": "iPhone 16",
 
@@ -187,10 +230,7 @@ def clean_result(raw: str):
             "35209918": "iPhone 16 Pro Max",
             "35210018": "iPhone 16 Pro Max",
 
-            # =================================================
             # iPhone 17
-            # =================================================
-
             "35199827": "iPhone 17",
             "35199927": "iPhone 17",
 
@@ -243,7 +283,6 @@ def clean_result(raw: str):
     # ІКОНКИ
     # =====================================================
 
-    # Find My
     if find_my == "ON":
         fm_icon = "🔴"
     elif find_my == "OFF":
@@ -251,7 +290,6 @@ def clean_result(raw: str):
     else:
         fm_icon = "🟡"
 
-    # iCloud
     if icloud == "LOST":
         ic_icon = "🔴"
     elif icloud == "CLEAN":
@@ -273,14 +311,18 @@ def clean_result(raw: str):
 
     return result
 
-
 # =====================================================
 # /start
 # =====================================================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    if update.effective_user.id != YOUR_ID:
+    if update.effective_user.id not in ADMINS:
+
+        await update.message.reply_text(
+            "нет доступа"
+        )
+
         return
 
     await update.message.reply_text(
@@ -288,17 +330,41 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=keyboard
     )
 
-
 # =====================================================
 # ОБРОБКА ПОВІДОМЛЕНЬ
 # =====================================================
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    if update.effective_user.id != YOUR_ID:
+    if update.effective_user.id not in ADMINS:
+
+        await update.message.reply_text(
+            "нет доступа"
+        )
+
         return
 
     text = update.message.text.strip()
+
+    # =====================================================
+    # 👮 КНОПКА ДОДАТИ АДМІНА
+    # =====================================================
+
+    if text == "👮 Додати адміна":
+
+        if update.effective_user.id != YOUR_ID:
+
+            await update.message.reply_text(
+                "нет доступа"
+            )
+
+            return
+
+        await update.message.reply_text(
+            "📌 Напиши команду:\n/addadmin ID"
+        )
+
+        return
 
     # =====================================================
     # 💰 БАЛАНС
@@ -408,7 +474,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="HTML"
         )
 
-
 # =====================================================
 # 🚀 ЗАПУСК БОТА
 # =====================================================
@@ -417,6 +482,10 @@ app = ApplicationBuilder().token(TOKEN).build()
 
 app.add_handler(
     CommandHandler("start", start)
+)
+
+app.add_handler(
+    CommandHandler("addadmin", add_admin)
 )
 
 app.add_handler(
