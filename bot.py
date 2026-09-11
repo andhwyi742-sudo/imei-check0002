@@ -1,6 +1,8 @@
 import requests
 import re
+
 from telegram import Update, ReplyKeyboardMarkup
+
 from telegram.ext import (
     ApplicationBuilder,
     MessageHandler,
@@ -10,21 +12,19 @@ from telegram.ext import (
 )
 
 # =====================================================
-# 🔑 КОНФІГУРАЦІЯ
+# 🔑 КОНФИГУРАЦИЯ
 # =====================================================
 
 TOKEN = "8588926481:AAE4tVcAryIfKuHhwR347IHf32rE3R9b4Tk"
 
-# 👑 ГОЛОВНИЙ АДМІН
+# 👑 ГЛАВНЫЙ АДМИН
 YOUR_ID = 2061131189
 
-# 👮 СПИСОК АДМІНІВ
+# 👮 СПИСОК АДМИНОВ
 ADMINS = [YOUR_ID]
 
 API_KEY = "8EkY2-6WohA-AzFpu-PcsIc-01bh1-6ozIE"
-
 API_BASE_URL = "https://alpha.imeicheck.com/api/php-api"
-
 SERVICE_ID = "4"
 
 # =====================================================
@@ -34,80 +34,70 @@ SERVICE_ID = "4"
 keyboard = ReplyKeyboardMarkup(
     [
         ["💰 Баланс"],
-        ["👮 Додати адміна"]
+        ["👮 Добавить админа"]
     ],
     resize_keyboard=True
 )
 
 # =====================================================
-# 👮 ДОДАТИ АДМІНА
+# 👮 ДОБАВИТЬ АДМИНА
 # =====================================================
 
 async def add_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = update.effective_user.id
 
-    # тільки головний адмін
+    # только главный админ
     if user_id != YOUR_ID:
-
         await update.message.reply_text(
             "нет доступа"
         )
-
         return
 
-    # перевірка аргументу
+    # проверка аргумента
     if not context.args:
-
         await update.message.reply_text(
-            "❗ Використання:\n/addadmin ID"
+            "❗ Использование:\n/addadmin ID"
         )
-
         return
 
     try:
-
         new_admin = int(context.args[0])
-
     except:
-
         await update.message.reply_text(
-            "❌ Невірний ID"
+            "❌ Неверный ID"
         )
-
         return
 
-    # якщо вже адмін
+    # если уже админ
     if new_admin in ADMINS:
-
         await update.message.reply_text(
-            "⚠️ Цей користувач вже адмін"
+            "⚠️ Этот пользователь уже админ"
         )
-
         return
 
     ADMINS.append(new_admin)
 
     await update.message.reply_text(
-        f"✅ Адмін доданий:\n<code>{new_admin}</code>",
+        f"✅ Админ добавлен:\n<code>{new_admin}</code>",
         parse_mode="HTML"
     )
 
+
 # =====================================================
-# 📱 КРАСИВИЙ ПАРСЕР
+# 📱 КРАСИВЫЙ ПАРСЕР
 # =====================================================
 
 def clean_result(raw: str):
 
     if not raw:
-        return "❌ Немає даних"
+        return "❌ Нет данных"
 
     # HTML OFF
     raw = re.sub(r"<[^>]+>", "", str(raw))
 
-    # нормалізація
+    # нормализация
     raw = raw.replace("\r", "\n").strip()
-
     raw_upper = raw.upper()
 
     # =====================================================
@@ -128,7 +118,7 @@ def clean_result(raw: str):
     # МОДЕЛЬ
     # =====================================================
 
-    model = "Невідомо"
+    model = "Неизвестно"
 
     model_patterns = [
         r"(iPhone[^\n]+)",
@@ -138,17 +128,29 @@ def clean_result(raw: str):
 
     for pattern in model_patterns:
 
-        m = re.search(pattern, raw, re.IGNORECASE)
+        m = re.search(
+            pattern,
+            raw,
+            re.IGNORECASE
+        )
 
         if m:
+
             model = m.group(1).strip()
 
-            model = re.sub(r"IMEI.*", "", model).strip()
+            model = re.sub(
+                r"IMEI.*",
+                "",
+                model
+            ).strip()
 
             break
 
-    # TAC визначення
-    if model == "Невідомо" and imei != "—":
+    # =====================================================
+    # TAC ОПРЕДЕЛЕНИЕ
+    # =====================================================
+
+    if model == "Неизвестно" and imei != "—":
 
         tac = imei[:8]
 
@@ -258,6 +260,7 @@ def clean_result(raw: str):
         "FIND MY: ON",
         "LOST MODE"
     ]):
+
         find_my = "ON"
 
     elif any(x in raw_upper for x in [
@@ -265,6 +268,7 @@ def clean_result(raw: str):
         "FMI: OFF",
         "FIND MY: OFF"
     ]):
+
         find_my = "OFF"
 
     # =====================================================
@@ -274,35 +278,41 @@ def clean_result(raw: str):
     icloud = "UNKNOWN"
 
     if "LOST MODE" in raw_upper or "LOST" in raw_upper:
+
         icloud = "LOST"
 
     elif "CLEAN" in raw_upper:
+
         icloud = "CLEAN"
 
     # =====================================================
-    # ІКОНКИ
+    # ИКОНКИ
     # =====================================================
 
     if find_my == "ON":
         fm_icon = "🔴"
+
     elif find_my == "OFF":
         fm_icon = "⚪"
+
     else:
         fm_icon = "🟡"
 
     if icloud == "LOST":
         ic_icon = "🔴"
+
     elif icloud == "CLEAN":
         ic_icon = "⚪"
+
     else:
         ic_icon = "🟡"
 
     # =====================================================
-    # ФІНАЛЬНЕ ПОВІДОМЛЕННЯ
+    # ФИНАЛЬНОЕ СООБЩЕНИЕ
     # =====================================================
 
     result = (
-        f"📱 <b>Результат перевірки</b>\n\n"
+        f"📱 <b>Результат проверки</b>\n\n"
         f"🔹 <b>{model}</b>\n"
         f"🧾 IMEI: <code>{imei}</code>\n\n"
         f"{fm_icon} Find My: <b>{find_my}</b>\n"
@@ -310,6 +320,7 @@ def clean_result(raw: str):
     )
 
     return result
+
 
 # =====================================================
 # /start
@@ -326,15 +337,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     await update.message.reply_text(
-        "👋 Надішли IMEI для перевірки:",
+        "👋 Отправь IMEI для проверки:",
         reply_markup=keyboard
     )
 
+
 # =====================================================
-# ОБРОБКА ПОВІДОМЛЕНЬ
+# ОБРАБОТКА СООБЩЕНИЙ
 # =====================================================
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_message(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
 
     if update.effective_user.id not in ADMINS:
 
@@ -347,10 +362,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
 
     # =====================================================
-    # 👮 КНОПКА ДОДАТИ АДМІНА
+    # 👮 КНОПКА ДОБАВИТЬ АДМИНА
     # =====================================================
 
-    if text == "👮 Додати адміна":
+    if text == "👮 Добавить админа":
 
         if update.effective_user.id != YOUR_ID:
 
@@ -381,7 +396,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 }
             )
 
-            bal = r.json().get("balance", "0")
+            bal = r.json().get(
+                "balance",
+                "0"
+            )
 
             await update.message.reply_text(
                 f"💰 Баланс: <b>{bal}</b> кр.",
@@ -391,30 +409,33 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
 
             await update.message.reply_text(
-                f"❌ Помилка API\n<code>{str(e)}</code>",
+                f"❌ Ошибка API\n<code>{str(e)}</code>",
                 parse_mode="HTML"
             )
 
         return
 
     # =====================================================
-    # 📟 ПЕРЕВІРКА IMEI
+    # 📟 ПРОВЕРКА IMEI
     # =====================================================
 
-    if not (text.isdigit() and len(text) in [15, 16]):
+    if not (
+        text.isdigit()
+        and len(text) in [15, 16]
+    ):
 
         await update.message.reply_text(
-            "❗ Введи коректний IMEI"
+            "❗ Введи корректный IMEI"
         )
 
         return
 
     msg = await update.message.reply_text(
-        "🔍 Перевіряю..."
+        "🔍 Проверяю..."
     )
 
     # =====================================================
-    # API ЗАПИТ
+    # API ЗАПРОС
     # =====================================================
 
     try:
@@ -435,7 +456,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print("==================================")
 
         # =====================================================
-        # УСПІХ
+        # УСПЕХ
         # =====================================================
 
         if res.get("status") == "success":
@@ -444,12 +465,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 res.get("result", "")
             )
 
-            final_msg = (
-                f"{formatted}\n\n"
-                f"━━━━━━━━━━━━━━\n"
-                f"💵 Вартість: <b>{res.get('price')}</b>\n"
-                f"⏱ Час: <b>{res.get('duration')}</b>"
-            )
+            # Без стоимости и времени
+            final_msg = formatted
 
             await msg.edit_text(
                 final_msg,
@@ -457,7 +474,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
         # =====================================================
-        # ПОМИЛКА API
+        # ОШИБКА API
         # =====================================================
 
         else:
@@ -465,24 +482,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             error_msg = (
                 res.get("message")
                 or res.get("result")
-                or "Невідома помилка API"
+                or "Неизвестная ошибка API"
             )
 
             await msg.edit_text(
-                f"❌ <b>Помилка:</b>\n<code>{error_msg}</code>",
+                f"❌ <b>Ошибка:</b>\n<code>{error_msg}</code>",
                 parse_mode="HTML"
             )
 
     # =====================================================
-    # СИСТЕМНА ПОМИЛКА
+    # СИСТЕМНАЯ ОШИБКА
     # =====================================================
 
     except Exception as e:
 
         await msg.edit_text(
-            f"❌ <b>Системна помилка:</b>\n<code>{str(e)}</code>",
+            f"❌ <b>Системная ошибка:</b>\n<code>{str(e)}</code>",
             parse_mode="HTML"
         )
+
 
 # =====================================================
 # 🚀 ЗАПУСК БОТА
@@ -505,6 +523,6 @@ app.add_handler(
     )
 )
 
-print("✅ Бот працює...")
+print("✅ Бот работает...")
 
 app.run_polling()
