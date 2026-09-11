@@ -402,7 +402,7 @@ async def handle_message(
             )
 
             await update.message.reply_text(
-                f"💰 Баланс: <b>{bal}</b> кр.",
+                f"💰 Баланс: <b>${bal}</b>",
                 parse_mode="HTML"
             )
 
@@ -419,9 +419,12 @@ async def handle_message(
     # 📟 ПРОВЕРКА IMEI
     # =====================================================
 
+    # Прибираємо пробіли з IMEI, наприклад: 35 228041 774223 8
+    imei = re.sub(r"\s+", "", text)
+
     if not (
-        text.isdigit()
-        and len(text) in [15, 16]
+        imei.isdigit()
+        and len(imei) in [15, 16]
     ):
 
         await update.message.reply_text(
@@ -445,7 +448,7 @@ async def handle_message(
             params={
                 "key": API_KEY,
                 "service": SERVICE_ID,
-                "imei": text
+                "imei": imei
             }
         )
 
